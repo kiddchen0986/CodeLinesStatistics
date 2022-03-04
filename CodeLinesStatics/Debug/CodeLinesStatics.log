@@ -1,0 +1,11 @@
+﻿  stdafx.cpp
+  CodeLinesStatics.cpp
+c:\workspace\codelinesstatics\codelinesstatics\codelinesstatics\codelinesstatics.cpp(100): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.17763.0\ucrt\string.h(90): note: see declaration of 'strcat'
+c:\workspace\codelinesstatics\codelinesstatics\codelinesstatics\codelinesstatics.cpp(108): warning C4101: 'fw': unreferenced local variable
+c:\workspace\codelinesstatics\codelinesstatics\codelinesstatics\codelinesstatics.cpp(150): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'FILE *'
+c:\workspace\codelinesstatics\codelinesstatics\codelinesstatics\codelinesstatics.cpp(183): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.17763.0\ucrt\stdio.h(208): note: see declaration of 'fopen'
+c:\workspace\codelinesstatics\codelinesstatics\codelinesstatics\codelinesstatics.cpp(265): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'FILE *'
+c:\workspace\codelinesstatics\codelinesstatics\codelinesstatics\codelinesstatics.cpp(290): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'FILE *'
+  CodeLinesStatics.vcxproj -> C:\WorkSpace\CodeLinesStatics\CodeLinesStatics\Debug\CodeLinesStatics.exe

@@ -193,14 +193,34 @@ FILE *OpenFile(char *file, char *mode)
 
 char *TrimString(char *line)
 {
-    char *str = line;
+    if (strlen(line) == 0)
+    {
+        return line;
+    }
+
+    char *temp = line;
+    // left trim
     for (int i = 0; i < MAX_PATH_LEN && line[i] != '\0'; i++)
     {
         if (isspace(line[i]))
         {
-            str = line + 1;
+            temp = line + 1;
             line = line + 1;
             i--;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+     //right trim
+    char *str = temp;
+    for (int i = strlen(temp); i >= 0; i--)
+    {
+        if ((temp[i - 1] == '\n') || (isspace(temp[i - 1])))  // remove '\n' and space
+        {
+            temp[i - 1] = '\0';
         }
         else
         {
@@ -294,17 +314,17 @@ void IgnoreCommentType1(FILE *fp, char *line)
     }
 
     char str[MAX_PATH_LEN] = { 0 };
-    if ((line[strlen(line) - 1] == '/') && (line[strlen(line) - 2] == '*'))
+    if ((line[strlen(line) - 1] == '/') && (line[strlen(line) - 2] == '*'))   // end in the same line
     {
         ;
     }
-    else
+    else    // end in new line
     {
         while (fgets(str, MAX_PATH_LEN, fp) != NULL)
         {
             line = TrimString(str);
-            line[strlen(line) - 1] = '\0';
-            if ((line[0] == '*') && (line[1] == '/'))
+            if (((line[0] == '*') && (line[1] == '/')) ||                               // at line's beginning
+                ((line[strlen(line) - 2] == '*') && (line[strlen(line) - 1] == '/')))   // at line's ends
             {
                 break;
             }

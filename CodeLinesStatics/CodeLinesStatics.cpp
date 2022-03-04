@@ -46,6 +46,8 @@ int main()
     GetAllFilesPath();
     GetFPCFilesPath();
 
+    // Here is to handle FPC internal files, please change to use ALL_FILES_PATH_LOG if want to handle
+    // all code files in path, like fl = OpenFile(ALL_FILES_PATH_LOG, "r");
     fl = OpenFile(FPC_FILE_LOG, "r");
     while (fgets(filename, MAX_PATH_LEN, fl) != NULL)
     {
@@ -292,7 +294,7 @@ void IgnoreCommentType1(FILE *fp, char *line)
     }
 
     char str[MAX_PATH_LEN] = { 0 };
-    if ((line[strlen(line) - 2] == '/') && (line[strlen(line) - 3] == '*'))
+    if ((line[strlen(line) - 1] == '/') && (line[strlen(line) - 2] == '*'))
     {
         ;
     }

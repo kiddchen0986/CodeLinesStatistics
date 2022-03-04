@@ -41,6 +41,10 @@ if __name__ == "__main__":
         print("No input src directory, exiting")
         sys.exit(-1)
 
+    if len(argv) == 3:
+        print("Too many input manifests, exiting")
+        sys.exit(-1)
+
     path = argv[1]
     file_types = ["*.h", "*.c",  "*.cpp", "*.cs"]   # add more file type into this list
     for file_type in file_types:

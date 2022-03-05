@@ -3,7 +3,7 @@
  *       Date  : 2022/02/20
  *       Description: Statistics on how many code lines
  *       1. Includes file types, .h, .c, .cpp, .cs
- *       2. Just count codes written by ourselves
+ *       2. available to choise what kinds of files, means count all codes or just written by ourselves
  *       3. Only for effective codes, exclude those comment codes
  *       4. Important to make sure all files are in utf-8 encoding, thus so you please first
  *          run the python script <cover_2_uft8.py> here provided to convert them.
@@ -20,13 +20,11 @@
 #define MAX_PATH_LEN 260
 
 #define COMMAND "DIR /D E:\\workspace\\mtt\\32 /s /B > "
-#define ALL_FILES_PATH_LOG "Files_Path.log"  // all files and folders
-#define ALL_FILES_LOG "All_Files_path.log"   // all files to count
-#define FPC_FILES_LOG "FPC_Files_Path.log"   // only fpc internal files to count
+#define ALL_FILES_PATH_LIST "Files_Path_List.txt"  // all files and folders
+#define ALL_FILES_LOG "All_Files_path.txt"         // all files to count
+#define FPC_FILES_LOG "FPC_Files_Path.txt"         // only fpc internal files to count
 
 static int c_file_number = 0;
-static int cpp_file_number = 0;
-static int h_file_number = 0;
 static int cs_file_number = 0;
 
 void GetAllFilesPath();
@@ -43,17 +41,19 @@ void IgnoreCommentType1(FILE *fp, char *str);  // i.e. /* ... */, include single
 void WriteFileNameToLog(char *fpcfilepath[], int count, int type);
 int main()
 {
-    FILE *fl, *fp;
-    int len = 0, sum = 0;
+    FILE *fl, *fp, *fw;
+    int len = 0, sum = 0, c_sum = 0, cs_sum = 0;
     long int count = 0;
     char filename[MAX_PATH_LEN] = { 0 }, str[MAX_PATH_LEN] = { 0 }, filechoice[30] = { 0 }, *line = NULL;
 
     GetAllFilesPath();
-    fl = ChoiceFileToStatistics();
+    fw = OpenFile("log.txt", "w");
 
+    fl = ChoiceFileToStatistics();
     while (fgets(filename, MAX_PATH_LEN, fl) != NULL)
     {
         printf("File name: %s\n", TrimString(filename));
+        fprintf_s(fw, "File name: %s\n", TrimString(filename));
 
         count = 0;
         fp = OpenFile(filename, "r");
@@ -79,17 +79,29 @@ int main()
             count++;
         }
         fclose(fp);
+
+        if (IsCFile(filename, strlen(filename)))
+        {
+            ++c_file_number;
+            c_sum += count;
+        }
+        else
+        {
+            ++cs_file_number;
+            cs_sum += count;
+        }
         sum += count;
         printf("Its number of lines: %d\n\n", count);
     }
 
-    printf("\n**********************\n");
+    printf("\n*****************************\n");
     printf("Total line number of all files is : %d\n", sum);
-    printf("The total number of h file: %d\n", h_file_number);
-    printf("The total number of c file: %d\n", c_file_number);
-    printf("The total number of cpp file: %d\n", cpp_file_number);
-    printf("The total number of cs file: %d\n", cs_file_number);
+    printf("The number of c files : %d, and line number : %d\n", c_file_number, c_sum);
+    printf("The number of cs files : %d, and line number : %d\n", cs_file_number, cs_sum);
+    printf("*****************************\n");
+
     fclose(fl);
+    fclose(fw);
 
     return 0;
 }
@@ -124,7 +136,7 @@ FILE* ChoiceFileToStatistics()
 void GetAllFilesPath()
 {
     char command[500] = COMMAND;
-    strcat(command, ALL_FILES_PATH_LOG);
+    strcat(command, ALL_FILES_PATH_LIST);
     system(command);
 
     GetAllFilesNamePath();
@@ -139,7 +151,7 @@ void GetAllFilesNamePath()
     char filename[MAX_PATH_LEN] = { 0 };
     char *allfilepath[5000] = { 0 };
 
-    fl = OpenFile(ALL_FILES_PATH_LOG, "r");
+    fl = OpenFile(ALL_FILES_PATH_LIST, "r");
     while (fgets(filename, MAX_PATH_LEN, fl) != NULL)
     {
         TrimString(filename);
@@ -168,7 +180,7 @@ void GetFPCFilesNamePath()
     char filename[MAX_PATH_LEN] = { 0 }, str[MAX_PATH_LEN] = { 0 }, *line = NULL;
     char *fpcfilepath[5000] = { 0 };
 
-    fl = OpenFile(ALL_FILES_PATH_LOG, "r");
+    fl = OpenFile(ALL_FILES_PATH_LIST, "r");
     while (fgets(filename, MAX_PATH_LEN, fl) != NULL)
     {
         TrimString(filename);
@@ -304,18 +316,15 @@ bool IsCFile(char *filename, int len)
 
     if ((filename[len - 2] == '.') && ((filename[len - 1]) == 'h'))
     {
-        h_file_number++;
         status = true;
     }
     else if (((filename[len - 2] == '.') && ((filename[len - 1]) == 'c')))
     {
-        c_file_number++;
         status = true;
     }
     else if (filename[len - 1] == 'p' && filename[len - 2] == 'p' &&
         filename[len - 3] == 'c' && filename[len - 4] == '.')
     {
-        cpp_file_number++;
         status = true;
     }
 
@@ -331,9 +340,8 @@ bool IsCSFile(char *filename, int len)
         exit(1);
     }
 
-    if (filename[len - 1] == '.' && filename[len - 2] == 'c' && filename[len - 3] == 's')
+    if (filename[len - 3] == '.' && filename[len - 2] == 'c' && filename[len - 1] == 's')
     {
-        cs_file_number++;
         status = true;
     }
 

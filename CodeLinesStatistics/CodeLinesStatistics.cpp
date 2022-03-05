@@ -2,9 +2,10 @@
  *       Author: Kidd Chen
  *       Date  : 2022/02/20
  *       Description: Statistics on how many code lines
- *       1. Just count codes written by ourselves
- *       2. Only for effective codes, exclude those comment codes
- *       3. Important to make sure all files are in utf-8 encoding, thus so you please first
+ *       1. Includes file types, .h, .c, .cpp, .cs
+ *       2. Just count codes written by ourselves
+ *       3. Only for effective codes, exclude those comment codes
+ *       4. Important to make sure all files are in utf-8 encoding, thus so you please first
  *          run the python script <cover_2_uft8.py> here provided to convert them.
  */
 
@@ -18,9 +19,10 @@
 
 #define MAX_PATH_LEN 260
 
-#define COMMAND "DIR /D E:\\workspace\\mtt\32 /s /B > "
-#define ALL_FILES_PATH_LOG "Files_Path.log"
-#define FPC_FILE_LOG "FPC_File_Path.log"
+#define COMMAND "DIR /D E:\\workspace\\mtt\\32 /s /B > "
+#define ALL_FILES_PATH_LOG "Files_Path.log"  // all files and folders
+#define ALL_FILES_LOG "All_Files_path.log"   // all files to count
+#define FPC_FILES_LOG "FPC_Files_Path.log"   // only fpc internal files to count
 
 static int c_file_number = 0;
 static int cpp_file_number = 0;
@@ -28,7 +30,9 @@ static int h_file_number = 0;
 static int cs_file_number = 0;
 
 void GetAllFilesPath();
-void GetFPCFilesPath();
+void GetAllFilesNamePath();
+void GetFPCFilesNamePath();
+FILE *ChoiceFileToStatistics();
 FILE *OpenFile(char *file, char *mode);
 char *TrimString(char *line);
 bool IsCFile(char *filename, int len);
@@ -36,31 +40,25 @@ bool IsCSFile(char *filename, int len);
 bool IsFPCFile(FILE *fp, char *str);
 int AllFpcFilesCount(FILE *fp);
 void IgnoreCommentType1(FILE *fp, char *str);  // i.e. /* ... */, include single line and multi lines
-void WriteFPCFileNameToLog(char *fpcfilepath[], int count);
+void WriteFileNameToLog(char *fpcfilepath[], int count, int type);
 int main()
 {
     FILE *fl, *fp;
     int len = 0, sum = 0;
     long int count = 0;
-    char filename[MAX_PATH_LEN] = { 0 }, str[MAX_PATH_LEN] = { 0 }, *line = NULL;
-    GetAllFilesPath();
-    GetFPCFilesPath();
+    char filename[MAX_PATH_LEN] = { 0 }, str[MAX_PATH_LEN] = { 0 }, filechoice[30] = { 0 }, *line = NULL;
 
-    // Here is to handle FPC internal files, please change to use ALL_FILES_PATH_LOG if want to handle
-    // all code files in path, like fl = OpenFile(ALL_FILES_PATH_LOG, "r");
-    fl = OpenFile(FPC_FILE_LOG, "r");
+    GetAllFilesPath();
+    fl = ChoiceFileToStatistics();
+
     while (fgets(filename, MAX_PATH_LEN, fl) != NULL)
     {
-        len = strlen(filename);
-        filename[len - 1] = '\0';
-        printf("File name: %s\n", filename);
+        printf("File name: %s\n", TrimString(filename));
 
         count = 0;
         fp = OpenFile(filename, "r");
         while (fgets(str, MAX_PATH_LEN, fp) != NULL)
         {
-            str[strlen(str) - 1] = '\0';
-
             line = TrimString(str);
             if ((line[0] == '/') && (line[1] == '*'))
             {
@@ -96,41 +94,99 @@ int main()
     return 0;
 }
 
+FILE* ChoiceFileToStatistics()
+{
+    FILE *fl;
+    int choice = 0;
+
+    printf("Please choise what files you want to statistics(1 or 2): \n1. All files, \n2. Only FPC internal files\n");
+    while (true)
+    {
+        scanf("%d", &choice);
+        if (choice == 1)
+        {
+            fl = OpenFile(ALL_FILES_LOG, "r");
+            break;
+        }
+        else if (choice == 2)
+        {
+            fl = OpenFile(FPC_FILES_LOG, "r");
+            break;
+        }
+        else
+        {
+            printf("Input a wrong choice, please choice again!\n");
+        }
+    }
+    return fl;
+}
+
 void GetAllFilesPath()
 {
     char command[500] = COMMAND;
     strcat(command, ALL_FILES_PATH_LOG);
     system(command);
+
+    GetAllFilesNamePath();
+    GetFPCFilesNamePath();
 }
 
-void GetFPCFilesPath()
+void GetAllFilesNamePath()
 {
     int path_len = 0;
     long count = 0;
-    FILE *fl, *fp, *fw;
+    FILE *fl;
+    char filename[MAX_PATH_LEN] = { 0 };
+    char *allfilepath[5000] = { 0 };
+
+    fl = OpenFile(ALL_FILES_PATH_LOG, "r");
+    while (fgets(filename, MAX_PATH_LEN, fl) != NULL)
+    {
+        TrimString(filename);
+        path_len = strlen(filename);
+
+        if (IsCFile(filename, path_len) || IsCSFile(filename, path_len))
+        {
+            char *temp = (char*)calloc(strlen(filename), sizeof(char));
+            memcpy(temp, filename, path_len);
+            temp[path_len] = '\0';
+            allfilepath[count++] = temp;
+            temp = NULL;
+            free(temp);
+        }
+    }
+    fclose(fl);
+
+    WriteFileNameToLog(allfilepath, count, 1);
+}
+
+void GetFPCFilesNamePath()
+{
+    int path_len = 0;
+    long count = 0;
+    FILE *fl, *fp;
     char filename[MAX_PATH_LEN] = { 0 }, str[MAX_PATH_LEN] = { 0 }, *line = NULL;
     char *fpcfilepath[5000] = { 0 };
 
     fl = OpenFile(ALL_FILES_PATH_LOG, "r");
     while (fgets(filename, MAX_PATH_LEN, fl) != NULL)
     {
+        TrimString(filename);
         path_len = strlen(filename);
-        filename[path_len - 1] = '\0';
 
         if (IsCFile(filename, path_len) || IsCSFile(filename, path_len))
         {
             fp = OpenFile(filename, "r");
             if (fgets(str, MAX_PATH_LEN, fp) != NULL)
             {
-                str[strlen(str) - 1] = '\0';
                 line = TrimString(str);
-
                 if ((line[0] == '/') && ((line[1] == '*') || (line[1] == '/')))
                 {
                     if (IsFPCFile(fp, line))
                     {
                         char *temp = (char*)calloc(strlen(filename), sizeof(char));
                         memcpy(temp, filename, path_len);
+                        temp[path_len] = '\0';
                         fpcfilepath[count++] = temp;
                         temp = NULL;
                         free(temp);
@@ -142,7 +198,7 @@ void GetFPCFilesPath()
     }
     fclose(fl);
 
-    WriteFPCFileNameToLog(fpcfilepath, count);
+    WriteFileNameToLog(fpcfilepath, count, 2);
 }
 
 int AllFpcFilesCount(FILE *fp)
@@ -156,7 +212,7 @@ int AllFpcFilesCount(FILE *fp)
     int count = 0;
     char line[MAX_PATH_LEN] = { 0 };
 
-    fp = OpenFile(ALL_FILES_PATH_LOG, "r");
+    fp = OpenFile(FPC_FILES_LOG, "r");
     while (fgets(line, MAX_PATH_LEN, fp) != NULL)
     {
         count++;
@@ -166,11 +222,11 @@ int AllFpcFilesCount(FILE *fp)
     return count;
 }
 
-void WriteFPCFileNameToLog(char *fpcfilepath[], int count)
+void WriteFileNameToLog(char *fpcfilepath[], int count, int type)
 {
     FILE *fw;
 
-    fw = OpenFile(FPC_FILE_LOG, "w");
+    fw = type == 1 ? OpenFile(ALL_FILES_LOG, "w") : OpenFile(FPC_FILES_LOG, "w");
     for (int i = 0; i < count; i++)
     {
         fputs(fpcfilepath[i], fw);
@@ -214,11 +270,17 @@ char *TrimString(char *line)
         }
     }
 
-     //right trim
+    //right trim
     char *str = temp;
     for (int i = strlen(temp); i >= 0; i--)
     {
-        if ((temp[i - 1] == '\n') || (isspace(temp[i - 1])))  // remove '\n' and space
+        if (temp[i - 1] > 127 || temp[i - 1] < 0)
+        {
+            temp[i - 1] = '\0';
+        }
+        else if ((temp[i - 1] == '\n') ||               // remove '\n'
+            (isspace(temp[i - 1])) ||                   // remove space
+            ((temp[i - 1] > 255 || temp[i - 1] < 0)))   // remove non-ascii character
         {
             temp[i - 1] = '\0';
         }
@@ -240,18 +302,18 @@ bool IsCFile(char *filename, int len)
         exit(1);
     }
 
-    if ((filename[len - 3] == '.') && ((filename[len - 2]) == 'h'))
+    if ((filename[len - 2] == '.') && ((filename[len - 1]) == 'h'))
     {
         h_file_number++;
         status = true;
     }
-    else if (((filename[len - 3] == '.') && ((filename[len - 2]) == 'c')))
+    else if (((filename[len - 2] == '.') && ((filename[len - 1]) == 'c')))
     {
         c_file_number++;
         status = true;
     }
-    else if (filename[len - 2] == 'p' && filename[len - 3] == 'p' &&
-        filename[len - 4] == 'c' && filename[len - 5] == '.')
+    else if (filename[len - 1] == 'p' && filename[len - 2] == 'p' &&
+        filename[len - 3] == 'c' && filename[len - 4] == '.')
     {
         cpp_file_number++;
         status = true;
@@ -269,7 +331,7 @@ bool IsCSFile(char *filename, int len)
         exit(1);
     }
 
-    if (filename[len - 2] == 's' && filename[len - 3] == 'c' && filename[len - 4] == '.')
+    if (filename[len - 1] == '.' && filename[len - 2] == 'c' && filename[len - 3] == 's')
     {
         cs_file_number++;
         status = true;
@@ -291,8 +353,6 @@ bool IsFPCFile(FILE *fp, char *line)
     char str[MAX_PATH_LEN] = { 0 };
     while ((fgets(str, MAX_PATH_LEN, fp) != NULL) && (i < 10))
     {
-        str[strlen(str) - 1] = '\0';
-
         line = TrimString(str);
         if (strstr(line, "Fingerprint Cards") != NULL)
         {
@@ -324,7 +384,7 @@ void IgnoreCommentType1(FILE *fp, char *line)
         {
             line = TrimString(str);
             if (((line[0] == '*') && (line[1] == '/')) ||                               // at line's beginning
-                ((line[strlen(line) - 2] == '*') && (line[strlen(line) - 1] == '/')))   // at line's ends
+                ((line[strlen(line) - 1] == '/') && (line[strlen(line) - 2] == '*')))   // at line's ends
             {
                 break;
             }

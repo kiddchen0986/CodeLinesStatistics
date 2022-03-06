@@ -19,10 +19,9 @@
 
 #define MAX_PATH_LEN 260
 
-#define COMMAND "DIR /D E:\\workspace\\mtt\\32 /s /B > "
-#define ALL_FILES_PATH_LIST "Files_Path_List.txt"  // all files and folders
-#define ALL_FILES_LOG "All_Files_path.txt"         // all files to count
-#define FPC_FILES_LOG "FPC_Files_Path.txt"         // only fpc internal files to count
+#define OUTPUT_ALL_FILES_LIST "List_All_Files_Path"  // all files and folders
+#define ALL_FILES_LOG "All_Files_Path"               // all files to count
+#define FPC_FILES_LOG "FPC_Files_Path"               // only fpc internal files to count
 
 void GetAllFilesPath();
 void GetAllFilesNamePath();
@@ -32,7 +31,7 @@ FILE *OpenFile(char *file, char *mode);
 char *TrimString(char *line);
 bool IsCFile(char *filename);
 bool IsCSFile(char *filename);
-bool IsFPCFile(FILE *fp);
+bool IsFPCFile(char *filename);
 int AllFpcFilesCount(FILE *fp);
 void IgnoreCommentType1(FILE *fp, char *str);  // i.e. /* ... */, include single line and multi lines
 void WriteFileNameToLog(char *fpcfilepath[], int count, int type);
@@ -137,8 +136,11 @@ FILE* ChoiceFileToStatistics()
 
 void GetAllFilesPath()
 {
-    char command[500] = COMMAND;
-    strcat_s(command, ALL_FILES_PATH_LIST);
+    char command[300] = "DIR /D /S /B ";
+    printf("Please input src code path: \n");
+    char path[MAX_PATH_LEN] = { 0 };
+    scanf("%s", path);      // sample: E:\workspace\mtt
+    strcat_s(command, path); strcat_s(command, " > "); strcat_s(command, OUTPUT_ALL_FILES_LIST);
     system(command);
 
     GetAllFilesNamePath();
@@ -152,7 +154,7 @@ void GetAllFilesNamePath()
     char *allfilepath[5000] = { 0 };
     FILE *fr;
 
-    fr = OpenFile(ALL_FILES_PATH_LIST, "r");
+    fr = OpenFile(OUTPUT_ALL_FILES_LIST, "r");
     while (fgets(filename, MAX_PATH_LEN, fr) != NULL)
     {
         TrimString(filename);
@@ -178,9 +180,9 @@ void GetFPCFilesNamePath()
     int path_len = 0, count = 0;
     char filename[MAX_PATH_LEN] = { 0 }, line[MAX_PATH_LEN] = { 0 }, *str = NULL;
     char *allfpcfile[5000] = { 0 };
-    FILE *fr, *fp;
+    FILE *fr;
 
-    fr = OpenFile(ALL_FILES_PATH_LIST, "r");
+    fr = OpenFile(OUTPUT_ALL_FILES_LIST, "r");
     while (fgets(filename, MAX_PATH_LEN, fr) != NULL)
     {
         TrimString(filename);
@@ -188,24 +190,15 @@ void GetFPCFilesNamePath()
 
         if (IsCFile(filename) || IsCSFile(filename))
         {
-            fp = OpenFile(filename, "r");
-            if (fgets(line, MAX_PATH_LEN, fp) != NULL)
+            if (IsFPCFile(filename))
             {
-                str = TrimString(line);
-                if ((str[0] == '/') && ((str[1] == '*') || (str[1] == '/')))
-                {
-                    if (IsFPCFile(fp))
-                    {
-                        char *temp = (char*)calloc(path_len, sizeof(char));
-                        memcpy(temp, filename, path_len);
-                        temp[path_len] = '\0';
-                        allfpcfile[count++] = temp;
-                        temp = NULL;
-                        free(temp);
-                    }
-                }
+                char *temp = (char*)calloc(path_len, sizeof(char));
+                memcpy(temp, filename, path_len);
+                temp[path_len] = '\0';
+                allfpcfile[count++] = temp;
+                temp = NULL;
+                free(temp);
             }
-            fclose(fp);
         }
     }
     fclose(fr);
@@ -344,27 +337,26 @@ bool IsCSFile(char *filename)
     return status;
 }
 
-bool IsFPCFile(FILE *fp)
+bool IsFPCFile(char *filename)
 {
-    if (fp == NULL)
-    {
-        printf("%p is NULL string!\n", fp);
-        exit(-1);
-    }
+    FILE *fp = NULL;
+    fp = OpenFile(filename, "r");
 
     int i = 0;
     bool status = false;
     char str[MAX_PATH_LEN] = { 0 };
     while ((fgets(str, MAX_PATH_LEN, fp) != NULL) && (i < 10))
     {
-        if (strstr(TrimString(str), "Fingerprint Cards") != NULL)
+        TrimString(str);
+        if ((strstr(str, "Fingerprint Cards") != NULL) &&
+            (strstr(str, "fingerprints.com") != NULL))
         {
             status = true;
             break;
         }
         i++;
     }
-
+    fclose(fp);
     return status;
 }
 

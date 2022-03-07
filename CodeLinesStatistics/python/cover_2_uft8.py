@@ -1,8 +1,27 @@
 import os
 import sys
 from chardet.universaldetector import UniversalDetector
-from filehandle.get_file_list import *
-from filehandle.read_write_operator import read_binary_file, write_binary_file
+from glob import glob
+
+
+def write_file(file_name, lines, new_line=False):
+    with open(file_name, mode='w') as fw:
+        if new_line:
+            fw.writelines(lines)
+        else:
+            fw.writelines("\n".join(sorted(lines)))
+
+
+def get_file_list(src, file_type):
+    file_list = []
+    for path, folders, _ in os.walk(src):
+        files = glob(os.path.join(path, file_type))
+        file_list.extend(files)
+
+    print("{} file number: {}".format(str(file_type).split(".")[1], len(file_list)))
+    write_file(str(file_type).split(".")[1]+"_file_list", file_list)
+
+    return file_list
 
 
 def get_encode_info(file):
@@ -14,6 +33,16 @@ def get_encode_info(file):
                 break
         detector.close()
         return detector.result['encoding']
+
+
+def read_binary_file(file):
+    with open(file, 'rb') as f:
+        return f.read()
+
+
+def write_binary_file(content, file):
+    with open(file, 'wb') as f:
+        f.write(content)
 
 
 def convert_encode2utf8(file, original_encode, des_encode):
@@ -41,7 +70,7 @@ def main(argv):
         sys.exit(-1)
 
     if len(argv) == 3:
-        print("Too many input manifests, exiting")
+        print("Inputs Too many parameters, exiting")
         sys.exit(-1)
 
     path = argv[1]

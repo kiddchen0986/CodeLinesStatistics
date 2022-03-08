@@ -279,7 +279,7 @@ char *TrimString(char *line)
         {
             line[i - 1] = '\0';
         }
-        if ((line[i - 1] == '\n') || (isspace(line[i - 1])))   // remove '\n' and space
+        else if ((line[i - 1] == '\n') || (isspace(line[i - 1])))   // remove '\n' and space
         {
             line[i - 1] = '\0';
         }

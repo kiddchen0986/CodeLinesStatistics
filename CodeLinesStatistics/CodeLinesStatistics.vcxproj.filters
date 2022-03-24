@@ -18,21 +18,24 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
+    <ClInclude Include="config.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="targetver.h">
+    <ClInclude Include="tools.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="define.h">
+    <ClInclude Include="parser_file.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="main.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="CodeLinesStatistics.cpp">
+    <ClCompile Include="tools.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="parser_file.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
